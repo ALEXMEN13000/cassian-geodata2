@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cassian GEODATA SYSTEM - Cartographie et mobilité Région SUD</title>
+    <meta name="description" content="Spécialiste en cartographie transport et mobilité dans la Région SUD. Études de circulation, aménagement territorial et solutions géomarketing.">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --cassian-blue: #1B6CFF;
+            --cassian-green: #00A870;
+            --cassian-blue-dark: #0B4A99;
+            --cassian-green-dark: #006B4A;
+            --navy: #0B2545;
+            --navy-light: #1A3A5C;
+            --slate: #5B6B7A;
+            --slate-dark: #3A4A5A;
+            --light: #F5F7FA;
+            --white: #FFFFFF;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-2xl: 48px;
+            --spacing-3xl: 64px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: var(--navy);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--spacing-md);
+        }
+
+        .section {
+            padding: var(--spacing-3xl) 0;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: transparent;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .header.scrolled {
+            background: var(--navy);
+            box-shadow: 0 4px 25px rgba(11, 74, 153, 0.3);
+        }
+
+        .header.scrolled .nav-shell { background: transparent; }
+        .header.scrolled .nav-link { color: var(--white); }
+        .header.scrolled .nav-link:hover { color: var(--cassian-green); }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-md) 0;
+        }
+
+        .nav-shell {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xl);
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
+            box-shadow: none;
+            border: none;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .page-logo {
+            position: fixed;
+            top: 12px;
+            left: 16px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--white);
+            z-index: 1200;
+            pointer-events: auto;
+            text-decoration: none;
+            cursor: pointer;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .nav {
+            display: flex;
+            gap: var(--spacing-xl);
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--white);
+            font-weight: 500;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            color: var(--cassian-green);
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--cassian-green-dark);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-family: inherit;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--cassian-blue-dark);
+            color: var(--white);
+            border: 1px solid var(--cassian-blue-dark);
+        }
+
+        .btn-primary:hover {
+            background: var(--navy);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(11, 74, 153, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--cassian-green-dark);
+            color: var(--white);
+            border: 1px solid var(--cassian-green-dark);
+        }
+
+        .btn-gradient { display: none; }
+
+        .btn-secondary:hover {
+            background: var(--navy);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 107, 74, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--cassian-blue-dark);
+            border: 2px solid var(--cassian-blue-dark);
+        }
+
+        .btn-outline:hover {
+            background: var(--cassian-blue-dark);
+            color: var(--white);
+            box-shadow: 0 8px 20px rgba(11, 74, 153, 0.3);
+        }
+
+        /* Mobile menu optimisé */
+        .mobile-menu-btn {
+            display: none;
+            flex-direction: column;
+            gap: 3px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            z-index: 1300;
+        }
+
+        .mobile-menu-btn span {
+            width: 24px;
+            height: 2px;
+            background: var(--white);
+            transition: all 0.2s ease;
+        }
+
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: transparent;
+            padding-top: 80px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-3xl);
+            align-items: center;
+            justify-items: end;
+            position: relative;
+            z-index: 2;
+            min-height: 85vh;
+        }
+
+        .hero-text {
+            color: var(--white);
+            text-align: right;
+            max-width: 700px;
+            margin-left: auto;
+            grid-column: 2;
+        }
+
+        .hero-eyebrow {
+            font-size: 0.95rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .hero-text h1 {
+            font-size: 5rem;
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+            margin-bottom: var(--spacing-md);
+            color: var(--white);
+        }
+
+        .hero-subtitle {
+            font-size: 1.4rem;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: var(--spacing-xl);
+            line-height: 1.35;
+            font-family: 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 500;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+
+        .hero-visual {
+            position: relative;
+        }
+
+        .hero-image {
+            width: 100%;
+            height: 400px;
+            background: var(--cassian-blue-dark);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 1.5rem;
+            font-weight: 600;
+            box-shadow: 0 8px 25px rgba(11, 74, 153, 0.2);
+        }
+
+        .hero-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            pointer-events: none;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(11, 37, 69, 0.45) 0%, rgba(11, 37, 69, 0.25) 40%, rgba(245, 247, 250, 0.2) 100%);
+            z-index: 1;
+        }
+
+        /* Axes Section */
+        .axes {
+            background: var(--white);
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .section-title p {
+            font-size: 1.125rem;
+            color: var(--slate);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .axes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-xl);
+        }
+
+        /* Mission Section */
+        .mission { 
+            background: var(--navy); 
+            padding: var(--spacing-3xl) 0;
+        }
+        .mission-quote {
+            font-size: 1.5rem;
+            color: var(--white);
+            text-align: center;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 50px;
+            border-left: 6px solid var(--cassian-green-dark);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.08);
+            line-height: 1.6;
+        }
+        .mission .section-title h2 { 
+            color: var(--white); 
+            font-size: 3rem;
+            margin-bottom: var(--spacing-xl);
+        }
+        .mission-description {
+            color: var(--white);
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto var(--spacing-2xl) auto;
+            font-size: 1.1rem;
+            line-height: 1.7;
+            opacity: 0.9;
+        }
+
+        .axe-card {
+            background: var(--white);
+            padding: var(--spacing-xl);
+            border-radius: 12px;
+            box-shadow: 0 6px 25px rgba(11, 37, 69, 0.12);
+            border: 1px solid rgba(11, 74, 153, 0.15);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .axe-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--cassian-blue-dark);
+        }
+
+        .axe-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 45px rgba(11, 74, 153, 0.25);
+            background: var(--white);
+        }
+
+        .axe-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--cassian-blue-dark);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: var(--spacing-md);
+            color: var(--white);
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(11, 74, 153, 0.3);
+        }
+
+        .axe-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--navy);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .axe-card p {
+            color: var(--slate);
+            line-height: 1.6;
+        }
+
+        /* Map Preview Section */
+        .services {
+            background: var(--white);
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .service-card {
+            background: var(--light);
+            padding: var(--spacing-lg);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--cassian-green-dark);
+            box-shadow: 0 2px 10px rgba(11, 37, 69, 0.08);
+        }
+
+        .service-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(11, 37, 69, 0.15);
+            background: var(--white);
+        }
+
+        .service-card h4 {
+            color: var(--navy);
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .service-card p {
+            color: var(--slate);
+            font-size: 0.9rem;
+        }
+
+        /* Expert Section */
+        .expert {
+            background: var(--light);
+        }
+
+        .expert-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: var(--spacing-2xl);
+            align-items: start;
+        }
+
+        .expert-photo {
+            width: 300px;
+            height: 350px;
+            background: var(--cassian-blue-dark);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 3rem;
+            box-shadow: 0 8px 25px rgba(11, 74, 153, 0.2);
+        }
+
+        .expert-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+        .expert .hl { color: var(--cassian-green-dark); font-weight: 700; }
+        .expert .expert-profile { background: linear-gradient(180deg, rgba(11,37,69,0.02) 0%, rgba(11,37,69,0.06) 100%); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 16px 40px rgba(11,37,69,0.12); }
+        .expert .photo-wrap { position: relative; overflow: hidden; }
+        .expert .photo-wrap img { width: 100%; height: 420px; object-fit: cover; transition: transform 0.35s ease; }
+        .expert .overlay { position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 24px; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 100%); color: white; opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease; pointer-events: none; }
+        .expert .expert-profile:hover .overlay { opacity: 1; transform: translateY(0); }
+        .expert .expert-profile:hover .photo-wrap img { transform: scale(1.03); }
+
+        .expert-info h3 {
+            font-size: 2rem;
+            color: var(--navy);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .expert-info .role {
+            font-size: 1.25rem;
+            color: var(--cassian-blue-dark);
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .expert-info p {
+            color: var(--slate);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .expertise-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+        }
+
+        .expertise-tag {
+            background: var(--cassian-blue-dark);
+            color: var(--white);
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(11, 74, 153, 0.2);
+        }
+
+        /* References Section */
+        .references {
+            background: var(--white);
+        }
+
+        .references-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        /* References search */
+        .references-search { margin-bottom: var(--spacing-lg); }
+        .references-search input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 3px solid var(--cassian-green-dark);
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        .references-search input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 107, 74, 0.1);
+        }
+
+        .reference-card {
+            background: var(--white);
+            border-radius: 12px;
+            border: 2px solid var(--cassian-blue-dark);
+            transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+            box-shadow: 0 3px 12px rgba(11, 37, 69, 0.06);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .reference-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(11, 37, 69, 0.15);
+            border-color: var(--cassian-blue-dark);
+        }
+
+        .reference-image {
+            padding: 12px 16px;
+            background: transparent;
+            color: var(--navy);
+            font-weight: 700;
+            border-bottom: 1px solid rgba(11, 37, 69, 0.12);
+        }
+
+        .reference-content {
+            padding: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            height: 100%;
+        }
+
+        .reference-content h4 {
+            color: var(--navy);
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            min-height: 3.2em; /* ~2 lignes */
+            line-height: 1.6;
+            overflow: hidden;
+        }
+
+        .reference-content .btn.ref-more { margin-top: auto; align-self: flex-start; }
+
+        /* Modal (References details) */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(11, 37, 69, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .modal {
+            background: var(--white);
+            width: min(900px, 92vw);
+            border-radius: 12px;
+            box-shadow: 0 24px 80px rgba(11,37,69,0.35);
+            overflow: hidden;
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(11,37,69,0.12);
+        }
+        .modal-title { font-weight: 700; color: var(--navy); }
+        .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--slate); }
+        .modal-body { padding: 20px; color: var(--slate); max-height: 70vh; overflow: auto; }
+        .modal-meta { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; row-gap: 6px; margin-bottom: 12px; }
+        .modal-meta .label { color: var(--slate); font-weight: 600; }
+        .modal-meta .value { color: var(--navy); }
+        .ref-more { margin-top: 10px; }
+
+        .reference-meta {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            column-gap: 12px;
+            row-gap: 6px;
+            margin-bottom: var(--spacing-md);
+            font-size: 0.9rem;
+        }
+        .reference-meta .label {
+            color: var(--slate);
+            font-weight: 600;
+        }
+        .reference-meta .value {
+            color: var(--navy);
+        }
+
+        .reference-content p {
+            color: var(--slate);
+            font-size: 0.9rem;
+        }
+
+        /* Contact Section */
+        .contact {
+            background: var(--light);
+        }
+
+        .contact-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-2xl);
+        }
+
+        .contact-form {
+            background: var(--white);
+            padding: var(--spacing-xl);
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(11, 37, 69, 0.12);
+            border: 1px solid rgba(11, 74, 153, 0.1);
+        }
+
+        /* Accent border for contact form on Contact page */
+        .page#contact .contact-form {
+            border: 3px solid var(--cassian-green-dark);
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            color: var(--navy);
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #E5E7EB;
+            border-radius: 6px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--cassian-blue-dark);
+            box-shadow: 0 0 0 3px rgba(11, 74, 153, 0.1);
+        }
+
+        .contact-info h3 {
+            color: var(--navy);
+            margin-bottom: var(--spacing-md);
+            font-size: 1.5rem;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            color: var(--slate);
+        }
+
+        .contact-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--cassian-blue-dark);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(11, 74, 153, 0.2);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--navy);
+            color: var(--white);
+            padding: var(--spacing-2xl) 0 var(--spacing-md);
+            box-shadow: 0 -4px 20px rgba(11, 37, 69, 0.2);
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .footer-section h4 {
+            margin-bottom: var(--spacing-md);
+            color: var(--white);
+        }
+
+        /* Brand typography aligned with hero eyebrow */
+        .footer-brand {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+        }
+
+        .footer-section p,
+        .footer-section a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            line-height: 1.6;
+        }
+
+        .footer-section a:hover {
+            color: var(--cassian-green);
+        }
+
+        .social-link { display: inline-flex; align-items: center; gap: 8px; }
+        .social-link svg { width: 20px; height: 20px; fill: currentColor; }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: var(--spacing-md);
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Page Styles */
+        .page {
+            display: none;
+            padding-top: 72px;
+            min-height: 100vh;
+            background: linear-gradient(180deg, var(--white) 0%, rgba(11, 37, 69, 0.01) 100%);
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Home page should start at the very top with video behind header */
+        .page#home {
+            padding-top: 0;
+            background: transparent;
+        }
+
+        .page-header {
+            background: var(--light);
+            padding: var(--spacing-2xl) 0;
+            text-align: center;
+            border-bottom: 3px solid var(--cassian-green-dark);
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            color: var(--navy);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .page-header p {
+            font-size: 1.125rem;
+            color: var(--slate);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Map Page Styles */
+        @media (max-width: 768px) {
+            .nav {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                right: 0;
+                background: var(--navy);
+                flex-direction: column;
+                padding: var(--spacing-lg);
+                display: none;
+                z-index: 1200;
+                box-shadow: 0 4px 20px rgba(11, 37, 69, 0.3);
+            }
+
+            .nav.active {
+                display: flex;
+            }
+
+            .nav-link {
+                padding: var(--spacing-md) 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+                justify-items: center;
+                min-height: 70vh;
+            }
+
+            .hero-text { 
+                text-align: center; 
+                max-width: 90%; 
+                grid-column: 1; 
+                margin-top: 20vh;
+                padding-right: 0;
+            }
+
+            .hero-text h1 {
+                font-size: 2.75rem; 
+                line-height: 1.1; 
+            }
+            
+            .hero-subtitle { 
+                font-size: 1.1rem; 
+            }
+
+            .expert-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: var(--spacing-lg);
+            }
+
+            .contact-content {
+                grid-template-columns: 1fr;
+            }
+
+            .axes-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-lg);
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+            }
+
+            .references-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Effets de survol optimisés */
+        .axe-card:hover .axe-icon {
+            transform: scale(1.05);
+            transition: transform 0.2s ease;
+        }
+
+        .service-card:hover h4 {
+            color: var(--cassian-blue-dark);
+            transition: color 0.2s ease;
+        }
+
+        .expertise-tag:hover {
+            background: var(--cassian-green-dark);
+            transition: background 0.2s ease;
+        }
+
+        .footer-section a:hover {
+            color: var(--cassian-green);
+            transition: color 0.2s ease;
+        }
+
+        /* Utilities */
+        .text-center {
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <a href="#" class="page-logo" data-page="home">Cassian GEODATA SYSTEM</a>
+    <header class="header" id="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="nav-shell">
+                <nav class="nav" id="nav">
+                    <a href="#home" class="nav-link" data-page="home" data-section="mission">À propos</a>
+                    <a href="#home" class="nav-link" data-page="home" data-section="expert">Notre expert</a>
+                    <a href="#services" class="nav-link" data-page="services">Notre expertise</a>
+                    <a href="#references" class="nav-link" data-page="references">Nos références</a>
+                    <a href="#contact" class="nav-link" data-page="contact">Contactez nous</a>
+                </nav>
+                </div>
+                <button class="mobile-menu-btn" id="mobile-menu-btn">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Home Page -->
+    <main class="page active" id="home">
+        <!-- Hero Section -->
+        <section class="hero">
+            <video id="heroVideoA" class="hero-video" autoplay muted playsinline preload="metadata"></video>
+            <video id="heroVideoB" class="hero-video" autoplay muted playsinline preload="metadata"></video>
+            <div class="container">
+                <div class="hero-content fade-in-up">
+                    <div class="hero-text" style="justify-self: end; align-self: start; margin-top: 26vh; padding-right: 1.5vw;">
+                        <div class="hero-eyebrow">Cassian GEODATA SYSTEM</div>
+                        <h1>IA & SIG</h1>
+                        <p class="hero-subtitle">Decide faster. Move smarter.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Axes Section -->
+        <section class="section axes">
+            <div class="container">
+                <div class="section-title fade-in-up">
+                    <h2>Nos domaines d'expertise</h2>
+                    <p>Trois axes stratégiques pour accompagner vos projets de territoire et de mobilité</p>
+                </div>
+                <div class="axes-grid">
+                    <div class="axe-card fade-in-up">
+                        <div class="axe-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <rect x="4" y="9" width="6" height="11" rx="1.5" stroke="white" stroke-width="1.8"/>
+                                <rect x="12" y="5" width="8" height="15" rx="1.5" stroke="white" stroke-width="1.8"/>
+                                <path d="M4 13h6M4 17h6M12 9h8" stroke="white" stroke-width="1.8"/>
+                            </svg>
+                        </div>
+                        <h3>Aménagement du territoire</h3>
+                        <p>Études d'impact, faisabilité d'infrastructures, intégration environnementale et planification urbaine pour optimiser l'organisation spatiale.</p>
+                    </div>
+                    <div class="axe-card fade-in-up">
+                        <div class="axe-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" stroke="white" stroke-width="1.8" fill="none"/>
+                                <path d="M10 11l2 2 4-4" stroke="white" stroke-width="1.8"/>
+                            </svg>
+                        </div>
+                        <h3>Sécurité</h3>
+                        <p>Analyse des infrastructures et sécurité des personnes, identification des points noirs et préconisations d'aménagement sécuritaire.</p>
+                    </div>
+                    <div class="axe-card fade-in-up">
+                        <div class="axe-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <rect x="6" y="6" width="12" height="10" rx="2" stroke="white" stroke-width="1.8"/>
+                                <path d="M7 16l-2 2M17 16l2 2" stroke="white" stroke-width="1.8"/>
+                                <circle cx="9" cy="11" r="1" fill="white"/>
+                                <circle cx="15" cy="11" r="1" fill="white"/>
+                            </svg>
+                        </div>
+                        <h3>Transport & Mobilité</h3>
+                        <p>Études de circulation, modélisation des flux, plans de mobilité et solutions multimodales pour optimiser les déplacements.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mission Section (before Expert) -->
+        <section class="section mission">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Notre mission</h2>
+                </div>
+                <div class="mission-description">
+                    <p>Nous croyons en la puissance de la donnée pour transformer la mobilité urbaine et territoriale. Notre approche combine expertise technique, innovation technologique et compréhension approfondie des enjeux locaux.</p>
+                </div>
+                <blockquote class="mission-quote">"Aider les territoires et les entreprises à décider plus vite et à se déplacer plus intelligemment, grâce à des analyses de données fiables, des modèles robustes et une expertise terrain."</blockquote>
+            </div>
+        </section>
+
+        <!-- Expert Preview (moved before Services) -->
+        <section class="section expert">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Notre expert</h2>
+                    <p>Un accompagnement pragmatique pour vos projets de mobilité</p>
+                </div>
+                <div class="expert-content" style="grid-template-columns: 1fr 1.2fr 1fr; gap: 32px; align-items: stretch;">
+                    <!-- Parcours -->
+                    <div class="card" style="background: var(--white); border-radius: 12px; box-shadow: 0 10px 30px rgba(11,37,69,0.08); padding: 24px;">
+                        <h3 style="text-align:center; margin-bottom: 12px; color: var(--navy);">Parcours</h3>
+                        <hr style="border:0; border-top: 3px solid var(--cassian-blue-dark); width: 80px; margin: 8px auto 16px auto;">
+                        <p style="color: var(--slate); line-height: 1.8;">
+                            Ingénieur en <span class="hl">Transport & Mobilités</span>, 15+ ans d’expérience en études de trafic, <span class="hl">SIG</span> et <span class="hl">aménagement</span>.
+                        </p>
+                        <p style="color: var(--slate); line-height: 1.8; margin-top: 8px;">
+                            Interventions dans <span class="hl">20+ pays</span> (France, Maghreb, Afrique subsaharienne). <span class="hl">Études trafic</span>, prévisions, enquêtes terrain, <span class="hl">modélisation</span> et analyse coûts‑bénéfices.
+                        </p>
+                        <p style="color: var(--slate); line-height: 1.8; margin-top: 8px;">
+                            Références récentes: <strong>Tunisie 2023</strong> (réhabilitation ferroviaire), <strong>Libye 2023</strong> (projet urbain), <strong>Madagascar 2023</strong> (réhabilitation routière).
+                        </p>
+                    </div>
+
+                    <!-- Carte centrale profil -->
+                    <div class="expert-profile">
+                        <div class="photo-wrap">
+                            <img src="/images/Malek.png" alt="Malek BELKHIR">
+                            <div class="overlay">
+                                <div style="font-weight: 700; font-size: 1.25rem;">Malek Belkhir</div>
+                                <div style="opacity: 0.9;">Expert cartographie, transport & mobilité</div>
+                            </div>
+                        </div>
+                        <div style="padding: 20px 24px; background: var(--navy); color: white;">
+                            <div style="opacity: 0.9;">Ma mission est d’offrir aux territoires et entreprises des décisions pilotées par la donnée, pour des déplacements plus sûrs et plus fluides.</div>
+                        </div>
+                    </div>
+
+                    <!-- Compétences clés -->
+                    <div class="card" style="background: var(--white); border-radius: 12px; box-shadow: 0 10px 30px rgba(11,37,69,0.08); padding: 24px;">
+                        <h3 style="text-align:center; margin-bottom: 12px; color: var(--navy);">Compétences clés</h3>
+                        <hr style="border:0; border-top: 3px solid var(--cassian-blue-dark); width: 120px; margin: 8px auto 16px auto;">
+                        <ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; color: var(--slate);">
+                            <li><span class="hl">SIG & DAO</span>: ArcGIS, QGIS, AutoCAD, Global Mapper</li>
+                            <li><span class="hl">Modélisation trafic</span>: TransCAD, VISSIM, Synchro</li>
+                            <li><span class="hl">Données & analyse</span>: traitements stats, géoloc, tableaux de bord</li>
+                            <li><span class="hl">Langues</span>: FR C2, EN TOEIC 715, AR native</li>
+                            <li><span class="hl">Connaissances</span>: Mobilité, enquêtes trafic, éval. socio‑éco, QHSE ISO</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Preview (moved after Expert) -->
+        <section class="section services">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Nos services</h2>
+                    <p>Un catalogue complet d'études et d'accompagnement pour vos projets</p>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card">
+                        <h4>Études de circulation</h4>
+                        <p>Analyse et organisation des flux, modélisation, impacts d'infrastructures nouvelles</p>
+                    </div>
+                    <div class="service-card">
+                        <h4>Études d'impact</h4>
+                        <p>Intégration projet dans environnement : sécurité routière, trafic, accessibilité</p>
+                    </div>
+                    <div class="service-card">
+                        <h4>Plans de mobilité</h4>
+                        <p>Diagnostics et plans d'action pour optimisation déplacements tous modes</p>
+                    </div>
+                    <div class="service-card">
+                        <h4>Géomarketing retail</h4>
+                        <p>Solutions de déploiement réseau pour enseignes et développeurs commerciaux</p>
+                    </div>
+                </div>
+                <div class="text-center" style="margin-top: 32px;">
+                    <a href="#" class="btn btn-outline" data-page="services">Voir tous nos services</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Services Page -->
+    <div class="page" id="services">
+        <div class="page-header">
+            <div class="container">
+                <h1>Nos domaines d'expertise</h1>
+                <p>Trois axes stratégiques pour accompagner vos projets de territoire et de mobilité</p>
+            </div>
+        </div>
+        <div class="container">
+            <section class="section axes">
+                <div class="axes-grid">
+                    <div class="axe-card fade-in-up">
+                        <div class="axe-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <rect x="4" y="9" width="6" height="11" rx="1.5" stroke="white" stroke-width="1.8"/>
+                                <rect x="12" y="5" width="8" height="15" rx="1.5" stroke="white" stroke-width="1.8"/>
+                                <path d="M4 13h6M4 17h6M12 9h8" stroke="white" stroke-width="1.8"/>
+                            </svg>
+                        </div>
+                        <h3>Aménagement du territoire</h3>
+                        <p>Études d'impact, faisabilité d'infrastructures, intégration environnementale et planification urbaine pour optimiser l'organisation spatiale.</p>
+                    </div>
+                    <div class="axe-card fade-in-up">
+                        <div class="axe-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" stroke="white" stroke-width="1.8" fill="none"/>
+                                <path d="M10 11l2 2 4-4" stroke="white" stroke-width="1.8"/>
+                            </svg>
+                        </div>
+                        <h3>Sécurité</h3>
+                        <p>Analyse des infrastructures et sécurité des personnes, identification des points noirs et préconisations d'aménagement sécuritaire.</p>
+                    </div>
+                    <div class="axe-card fade-in-up">
+                        <div class="axe-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <rect x="6" y="6" width="12" height="10" rx="2" stroke="white" stroke-width="1.8"/>
+                                <path d="M7 16l-2 2M17 16l2 2" stroke="white" stroke-width="1.8"/>
+                                <circle cx="9" cy="11" r="1" fill="white"/>
+                                <circle cx="15" cy="11" r="1" fill="white"/>
+                            </svg>
+                        </div>
+                        <h3>Transport & Mobilité</h3>
+                        <p>Études de circulation, modélisation des flux, plans de mobilité et solutions multimodales pour optimiser les déplacements.</p>
+                    </div>
+                </div>
+            </section>
+            <section class="section services">
+                <div class="section-title">
+                    <h2>Nos services</h2>
+                    <p>Un catalogue complet d'études et d'accompagnement pour vos projets</p>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card">
+                        <h4>Études de circulation et aménagement</h4>
+                        <p>Analyse et organisation des flux, modélisation, impacts d'une nouvelle infrastructure, organisation du stationnement, politiques de stationnement, mise en place de jalonnement, enquêtes de stationnement.</p>
+                    </div>
+                    <div class="service-card">
+                        <h4>Études d'impact</h4>
+                        <p>Intégration d'un projet dans son environnement en termes de sécurité routière, trafic, accessibilité, modes doux (piétons, vélos).</p>
+                    </div>
+                    <div class="service-card">
+                        <h4>Études d'opportunité et de faisabilité</h4>
+                        <p>Pour des projets d'infrastructures : création ou aménagement (déviation de centre bourg, sécurisation d'axes, voies nouvelles, bus à haut niveau de service, voies de covoiturage).</p>
+                    </div>
+                    <div class="service-card">
+                        <h4>Études de trafic</h4>
+                        <p>Diagnostics des trafics actuels, modélisation des impacts futurs, état des lieux, identification de points sensibles, préconisations d'aménagement.</p>
+                    </div>
+                    <div class="service-card">
+                        <h4>Mesures et modélisation de la mobilité</h4>
+                        <p>Comptages routiers et piétons, enquêtes de circulation, simulation de flux, analyse de temps de parcours, utilisation de données mobiles.</p>
+                    </div>
+                    <div class="service-card">
+                        <h4>Élaboration de plans de mobilité</h4>
+                        <p>Diagnostics et plans d'action visant l'optimisation des déplacements tous modes (collectif, modes actifs, voitures).</p>
+                    </div>
+                    <div class="service-card">
+                        <h4>Assistance à maîtrise d'ouvrage (AMO)</h4>
+                        <p>Conseil stratégique : études socio-économiques, simulations de rentabilité, prévisions de trafic.</p>
+                    </div>
+                    <div class="service-card">
+                        <h4>Géomarketing & déploiement retail</h4>
+                        <p>Solutions de déploiement de réseau retail pour enseignes et développeurs, analyses de zones de chalandise.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- References Page -->
+    <div class="page" id="references">
+        <div class="page-header">
+            <div class="container">
+                <h1>Références & Projets</h1>
+                <p>Découvrez nos réalisations en cartographie et mobilité</p>
+            </div>
+        </div>
+        <div class="container">
+            <div class="section">
+                <div class="references-search">
+                    <input id="ref-search" type="search" placeholder="Rechercher un projet, un pays, un client…" />
+                </div>
+                <div class="references-grid">
+                    <div class="reference-card">
+                        <div class="reference-image">Tunisie</div>
+                        <div class="reference-content">
+                            <h4>Réhabilitation ferroviaire Kalaa Sghira – Kairouan (60 km)</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2023</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Ministère du Transport / SNCFT</span>
+                                <span class="label">Bailleur</span><span class="value">BEI</span>
+                            </div>
+                            <p>Études de trafic et évaluation économique/financière: enquêtes, préférences révélées, bilans économiques, identification pôles d’émission/attraction.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-tunisie-2023">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-tunisie-2023">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Tunisie — Réhabilitation ferroviaire Kalaa Sghira – Kairouan</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2023</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Ministère du Transport / SNCFT</span>
+                                    <span class="label">Bailleur</span><span class="value">Banque Européenne d’Investissement (BEI)</span>
+                                    <span class="label">Rôle</span><span class="value">Ingénieur économiste des transports</span>
+                                </div>
+                                <p>Étude de trafic, évaluation économique & financière pour une réhabilitation ferroviaire (~60 km):
+                                recherches documentaires, enquêtes de trafic, préférences révélées (usagers TC et PL), identification et analyse des pôles d’émission/attraction,
+                                modélisation sur la base des résultats, bilans économiques (incluant externalités environnementales), pré‑diagnostic financier (PPP).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Libye</div>
+                        <div class="reference-content">
+                            <h4>Liaison réseau routier urbain – Cité Essalem</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2023</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Housing & Infrastructure Board</span>
+                                <span class="label">Financement</span><span class="value">Budget d’État</span>
+                                <span class="label">Rôle</span><span class="value">Ingénieur trafic</span>
+                            </div>
+                            <p>Enquêtes trafic, prévision des flux, modélisation, plans de circulation, évaluation de capacité et recommandations d’aménagement.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-libye-2023">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-libye-2023">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Libye — Liaison réseau routier urbain (Cité Essalem)</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2023</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Housing & Infrastructure Board</span>
+                                    <span class="label">Financement</span><span class="value">Budget d’État</span>
+                                    <span class="label">Rôle</span><span class="value">Ingénieur trafic</span>
+                                </div>
+                                <ul class="modal-meta" style="grid-template-columns: 1fr; row-gap: 8px;">
+                                    <li>Planification et exécution des enquêtes de trafic</li>
+                                    <li>Génération et prévision des flux selon les aménagements urbains (pôles d’habitation, équipements, zones génératrices)</li>
+                                    <li>Identification des pôles d’émission et d’attraction</li>
+                                    <li>Modélisation des trafics, plans de circulation (Cité Essalem / Cité Chiha)</li>
+                                    <li>Évaluation de la capacité des aménagements projetés</li>
+                                    <li>Rapport technique et recommandations</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Madagascar</div>
+                        <div class="reference-content">
+                            <h4>Réhabilitation routière – études trafic & éco</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2023</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Agence Routière / PDDR</span>
+                                <span class="label">Bailleur</span><span class="value">IDA</span>
+                            </div>
+                            <p>Diagnostic trafic, analyse socio‑éco, prévisions, impacts et analyses coûts‑bénéfices pour projets de réhabilitation.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-mada-2023">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-mada-2023">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Madagascar — Réhabilitation routière</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2023</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Agence Routière / PDDR</span>
+                                    <span class="label">Bailleur</span><span class="value">IDA</span>
+                                </div>
+                                <p>Études de trafic et évaluation économique pour des projets de réhabilitation routière: enquêtes, analyse contextuelle, prévisions de trafic, analyses d’impacts,
+                                et coûts‑bénéfices; rédaction du rapport technique et recommandations.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">République du Congo</div>
+                        <div class="reference-content">
+                            <h4>Aménagement et bitumage Liranga – Ngagnia</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2022</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Ministère de l’Aménagement du Territoire</span>
+                                <span class="label">Bailleur</span><span class="value">BAD</span>
+                            </div>
+                            <p>Études de trafic, évaluation économique, identification pôles d’émission/attraction, analyses coûts‑bénéfices.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-congo-2022">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-congo-2022">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">République du Congo — Liranga – Ngagnia</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2022</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Ministère de l’Aménagement du Territoire</span>
+                                    <span class="label">Bailleur</span><span class="value">Banque Africaine de Développement</span>
+                                </div>
+                                <p>Études de trafic et évaluation économique d’un tronçon routier: recherche documentaire; prévisions; identification des pôles d’émission/attraction;
+                                analyses d’impacts socio‑économiques; analyses coûts‑bénéfices; rapport technique et recommandations.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Union des Comores</div>
+                        <div class="reference-content">
+                            <h4>Corridor routier impacté par le cyclone Kenneth</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2022</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Ministère de l’Aménagement du Territoire</span>
+                                <span class="label">Bailleur</span><span class="value">Banque Mondiale</span>
+                </div>
+                            <p>Enquêtes et évaluation économique du tronçon, prévisions de trafic, analyses socio‑économiques.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-comores-2022">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-comores-2022">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Union des Comores — Corridor post‑cyclone Kenneth</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2022</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Ministère de l’Aménagement du Territoire</span>
+                                    <span class="label">Bailleur</span><span class="value">Banque Mondiale</span>
+                                </div>
+                                <p>Études et évaluation économique d’un corridor routier impacté par un cyclone: enquêtes de terrain, prévisions de trafic, analyses socio‑économiques et recommandations.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Côte d’Ivoire</div>
+                        <div class="reference-content">
+                            <h4>Postes de contrôle juxtaposés – frontières</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2022</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">CEDEAO</span>
+                                <span class="label">Bailleur</span><span class="value">BAD</span>
+                            </div>
+                            <p>Études trafic & flux transfrontaliers, enquêtes, prévisions, analyses coûts‑bénéfices et recommandations.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-civ-2022">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-civ-2022">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Côte d’Ivoire — Postes de contrôle juxtaposés</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2022</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">CEDEAO</span>
+                                    <span class="label">Bailleur</span><span class="value">Banque Africaine de Développement</span>
+                                </div>
+                                <p>Études et prévisions de trafic pour postes frontaliers; analyse du flux transfrontalier; enquêtes, scénarios et recommandations opérationnelles.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Bénin</div>
+                        <div class="reference-content">
+                            <h4>Réhabilitation route Lomé–Cotonou (Phase 2)</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2021</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Ministère des Infrastructures</span>
+                                <span class="label">Bailleur</span><span class="value">BAD</span>
+                            </div>
+                            <p>Études trafic et évaluation économique du corridor, identification des pôles d’émission/attraction, analyses coûts‑bénéfices.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-benin-2021">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-benin-2021">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Bénin — Réhabilitation route Lomé–Cotonou (Phase 2)</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2021</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Ministère des Infrastructures</span>
+                                    <span class="label">Bailleur</span><span class="value">Banque Africaine de Développement</span>
+                                </div>
+                                <p>Études de trafic et évaluation économique d’un corridor: enquêtes, identification des pôles, analyses coûts‑bénéfices, rapport et recommandations.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Togo</div>
+                        <div class="reference-content">
+                            <h4>RN1 Aouda – Kara: études et DAO</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2021</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Ministère des Transports</span>
+                                <span class="label">Bailleur</span><span class="value">Banque Mondiale</span>
+                            </div>
+                            <p>Études technico‑économiques, coordination des enquêtes, prévisions de trafic et analyses socio‑économiques.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-togo-2021">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-togo-2021">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Togo — RN1 Aouda – Kara</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2021</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Ministère des Transports</span>
+                                    <span class="label">Bailleur</span><span class="value">Banque Mondiale</span>
+                                </div>
+                                <p>Actualisation d’études; préparation DAO; coordination des enquêtes; prévisions; analyses socio‑éco; dossier de recommandations.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Gabon</div>
+                        <div class="reference-content">
+                            <h4>Aménagement & bitumage – corridor routier</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2020</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">CEMAC</span>
+                                <span class="label">Bailleur</span><span class="value">FODEC</span>
+                            </div>
+                            <p>Études trafic et évaluation économique du tronçon, analyses des impacts et recommandations.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-gabon-2020">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-gabon-2020">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Gabon — Corridor routier</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2020</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">CEMAC</span>
+                                    <span class="label">Bailleur</span><span class="value">FODEC</span>
+                                </div>
+                                <p>Études trafic et évaluation économique du tronçon: enquêtes, prévisions, analyses d’impacts et scénarios recommandés.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Mali</div>
+                        <div class="reference-content">
+                            <h4>APS/APD échangeur & viaduc – Sikasso</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2019</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Ministère des Infrastructures</span>
+                                <span class="label">Financement</span><span class="value">Budget national</span>
+                            </div>
+                            <p>Études trafic et évaluation économique d’un projet urbain: enquêtes, prévisions, micro‑simulation SYNCHRO/VISSIM.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-mali-2019">Voir plus</button>
+                        </div>
+                    </div>
+                    <!-- Ajouts depuis Références-projet-Malek-BELKHIR.txt -->
+                    <div class="reference-card">
+                        <div class="reference-image">Tunisie</div>
+                        <div class="reference-content">
+                            <h4>Étude de deux corridors Bouchebka & Hazoua → port de Gabès</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2023</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Ministère de l’Équipement et de l’Habitat</span>
+                                <span class="label">Bailleur</span><span class="value">Fonds Africain de Développement (FAD)</span>
+                            </div>
+                            <p>Enquêtes, prévisions, identification des pôles, modélisation, analyses d’impacts et coûts‑bénéfices; rapport et recommandations.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-tunisie-corridors-2023">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-tunisie-corridors-2023">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Tunisie — Étude de deux corridors routiers</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2023</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Ministère de l’Équipement et de l’Habitat</span>
+                                    <span class="label">Bailleur</span><span class="value">FAD</span>
+                                </div>
+                                <p>Études de trafic et évaluation économique: planification/enquêtes, analyse contextuelle, prévisions et modélisation,
+                                identification des pôles, analyses d’impacts et coûts‑bénéfices; rapport technique.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Madagascar</div>
+                        <div class="reference-content">
+                            <h4>RNT55, rocade Fiherenana & RN9 — réhabilitation</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2022</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">MATTP / PACFC</span>
+                                <span class="label">Bailleur</span><span class="value">FAD</span>
+                            </div>
+                            <p>Enquêtes trafic, prévisions, identification des pôles, analyses d’impacts et coûts‑bénéfices pour plusieurs tronçons.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-mada-2022">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-mada-2022">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Madagascar — RNT55 / RN9 / rocade Fiherenana</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2022</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">MATTP – PACFC</span>
+                                    <span class="label">Bailleur</span><span class="value">FAD</span>
+                                </div>
+                                <p>Études de trafic et évaluation économique: enquêtes, analyse du contexte, prévisions, identification des pôles,
+                                analyses d’impacts et coûts‑bénéfices; recommandations.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">République du Congo</div>
+                        <div class="reference-content">
+                            <h4>Epena – Impfondo – Dongou – Enyelle</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2022</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Min. Aménagement / Grands Travaux</span>
+                                <span class="label">Bailleur</span><span class="value">BAD</span>
+                            </div>
+                            <p>Études de trafic et évaluation économique: enquêtes, prévisions (TdR), identification des pôles, analyses socio‑éco et coûts‑bénéfices.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-congo-epena-2022">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-congo-epena-2022">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">République du Congo — Epena – Impfondo – Dongou – Enyelle</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2022</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Min. Aménagement / Cellule Grands Travaux</span>
+                                    <span class="label">Bailleur</span><span class="value">BAD</span>
+                                </div>
+                                <p>Études de trafic et évaluation économique du tronçon: recherche documentaire, prévisions, identification des pôles,
+                                analyses d’impacts et coûts‑bénéfices; rapport final.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Cameroun</div>
+                        <div class="reference-content">
+                            <h4>Voiries urbaines — Maroua 1er</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2022</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Ministère de l’Habitat et du Développement Urbain</span>
+                                <span class="label">Bailleur</span><span class="value">Banque Mondiale</span>
+                            </div>
+                            <p>Études de trafic urbaines: enquêtes, prévisions, micro‑simulation, analyses d’impacts et coûts‑bénéfices; coordination locale.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-cameroun-2022">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-cameroun-2022">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Cameroun — Maroua 1er, voiries urbaines</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2022</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Ministère de l’Habitat et du Développement Urbain</span>
+                                    <span class="label">Bailleur</span><span class="value">Banque Mondiale</span>
+                                </div>
+                                <p>Étude détaillée du trafic et évaluation économique pour l’aménagement de plusieurs voiries: enquêtes, prévisions,
+                                coordination avec les autorités, micro‑simulation, analyses d’impacts et coûts‑bénéfices.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Tchad</div>
+                        <div class="reference-content">
+                            <h4>Routes et pistes rurales — Moyen‑Chari & Mandoul</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2021</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Ministère des Infrastructures / DRPR</span>
+                                <span class="label">Bailleur</span><span class="value">AID – Banque mondiale</span>
+                            </div>
+                            <p>Étude économique pour prioriser un réseau de pistes: enquêtes, analyse contextuelle, prévisions, analyse multicritères, recommandations.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-tchad-2021">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-tchad-2021">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Tchad — Routes et pistes rurales</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2021</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Ministère des Infrastructures / DRPR</span>
+                                    <span class="label">Bailleur</span><span class="value">AID – Banque mondiale</span>
+                                </div>
+                                <p>Coordination des enquêtes; analyse contextuelle; prévisions; identification des pôles; analyses d’impacts; analyse multicritères;
+                                rapport et recommandations.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Burundi</div>
+                        <div class="reference-content">
+                            <h4>Pont Kavimvira — reconstruction</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2021</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">Min. Environnement, Agriculture & Élevage</span>
+                                <span class="label">Bailleur</span><span class="value">AID – Banque mondiale</span>
+                            </div>
+                            <p>Études de trafic et évaluation économique d’un pont péri‑national: enquêtes, prévisions, analyses d’impacts.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-burundi-2021">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-burundi-2021">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Burundi — Pont Kavimvira</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2021</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Min. Environnement, Agriculture & Élevage</span>
+                                    <span class="label">Bailleur</span><span class="value">AID – Banque mondiale</span>
+                                </div>
+                                <p>Formation des enquêteurs, coordination des enquêtes, analyse contextuelle, prévisions, identification des pôles, analyses d’impacts.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">Guinée</div>
+                        <div class="reference-content">
+                            <h4>Schéma directeur — Remplacement de 23 bacs par des ponts</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2020</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">ACGP</span>
+                                <span class="label">Bailleur</span><span class="value">BADEA</span>
+                            </div>
+                            <p>Schéma directeur (phase 1) puis études de 3 bacs prioritaires: enquêtes, prévisions, analyses d’impacts et coûts‑bénéfices.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-guinee-2020">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-guinee-2020">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Guinée — Schéma directeur des bacs</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2020</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Administration et Contrôle des Grands Projets</span>
+                                    <span class="label">Bailleur</span><span class="value">BADEA</span>
+                                </div>
+                                <p>Élaboration du schéma directeur: analyse contextuelle, prévisions, coordination des parties prenantes; priorisation; études détaillées
+                                des bacs prioritaires et rapport final.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-image">G5 Sahel</div>
+                        <div class="reference-content">
+                            <h4>Chemin de fer du G5 Sahel — faisabilité</h4>
+                            <div class="reference-meta">
+                                <span class="label">Année</span><span class="value">2020</span>
+                                <span class="label">Maître d'ouvrage</span><span class="value">G5 Sahel</span>
+                                <span class="label">Financement</span><span class="value">Secrétariat Permanent du G5 Sahel</span>
+                            </div>
+                            <p>Mission SIG & analyse des transports: collecte et intégration multi‑pays, modèle SIG, base de données et cartographies thématiques.</p>
+                            <button class="btn btn-outline ref-more" data-ref-modal-target="ref-g5-2020">Voir plus</button>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-g5-2020">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">G5 Sahel — Projet ferroviaire trans‑sahélien</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2020</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">G5 Sahel</span>
+                                    <span class="label">Financement</span><span class="value">Secrétariat Permanent du G5 Sahel</span>
+                                </div>
+                                <p>Collecte et analyse de données, création d’un modèle SIG, base de données multi‑pays, production cartographique
+                                (population desservie, secteur minier, agricole, etc.).</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-backdrop" id="ref-mali-2019">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <div class="modal-title">Mali — APS/APD échangeur & viaduc – Sikasso</div>
+                                <button class="modal-close" data-ref-modal-close>&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="modal-meta">
+                                    <span class="label">Année</span><span class="value">2019</span>
+                                    <span class="label">Maître d'ouvrage</span><span class="value">Ministère des Infrastructures</span>
+                                    <span class="label">Financement</span><span class="value">Budget national</span>
+                                </div>
+                                <p>Études technico‑économiques d’un échangeur et d’un viaduc urbains: enquêtes de mobilité, prévisions de trafic, analyses socio‑économiques, micro‑simulation, et rapport détaillé.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <!-- Contact Page -->
+    <div class="page" id="contact">
+        <div class="page-header">
+            <div class="container">
+                <h1>Contact</h1>
+                <p>Discutons de votre projet de cartographie et mobilité</p>
+            </div>
+        </div>
+        <div class="container">
+            <div class="section">
+                <div class="contact-content">
+                    <div class="contact-form">
+                        <h3 style="margin-bottom: 24px; color: var(--navy);">Demande d'information</h3>
+                        <form id="contact-form">
+                            <div class="form-group">
+                                <label for="name">Nom *</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email *</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="organization">Organisation</label>
+                                <input type="text" id="organization" name="organization">
+                            </div>
+                            <div class="form-group">
+                                <label for="subject">Sujet</label>
+                                <select id="subject" name="subject" style="width: 100%; padding: 12px 16px; border: 2px solid #E5E7EB; border-radius: 6px;">
+                                    <option value="">Sélectionner un sujet</option>
+                                    <option value="demo">Demande de démonstration</option>
+                                    <option value="etude">Étude de projet</option>
+                                    <option value="partenariat">Partenariat</option>
+                                    <option value="autre">Autre</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="message">Message *</label>
+                                <textarea id="message" name="message" rows="5" required placeholder="Décrivez votre projet ou votre demande..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Envoyer la demande</button>
+                        </form>
+                    </div>
+                    <div class="contact-info">
+                        <h3>Coordonnées</h3>
+                        
+                        <div class="contact-item">
+                            <div>
+                                <strong>Email</strong><br>
+                                contact@cassian-geodata.fr
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div>
+                                <strong>Téléphone</strong><br>
+                                +33 (0)4 XX XX XX XX
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div>
+                                <strong>LinkedIn</strong><br>
+                                <a href="https://www.linkedin.com/in/malek-belkhir" target="_blank" rel="noopener noreferrer">linkedin.com/in/malek-belkhir</a>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 32px; padding: 24px; background: var(--light); border-radius: 8px;">
+                            <h4 style="color: var(--navy); margin-bottom: 12px;">Pourquoi Cassian ?</h4>
+                            <ul style="color: var(--slate); list-style: none;">
+                                
+                                <li style="margin-bottom: 8px;">✓ Données territorialisées</li>
+                                <li style="margin-bottom: 8px;">✓ Modélisation avancée</li>
+                                <li>✓ Délais respectés</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4 class="footer-brand">Cassian GEODATA SYSTEM</h4>
+                </div>
+                <div class="footer-section">
+                    <h4>Services</h4>
+                    <p><a href="#" data-page="services">Études de circulation</a></p>
+                    <p><a href="#" data-page="services">Plans de mobilité</a></p>
+                    <p><a href="#" data-page="services">Géomarketing retail</a></p>
+                    <p><a href="#" data-page="services">AMO & conseil</a></p>
+                </div>
+                <div class="footer-section">
+                    <h4>Domaines d'expertise</h4>
+                    <p><a href="#" data-page="services" data-section="axes">Aménagement du territoire</a></p>
+                    <p><a href="#" data-page="services" data-section="axes">Sécurité</a></p>
+                    <p><a href="#" data-page="services" data-section="axes">Transport & Mobilité</a></p>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    
+                    <p>Email : contact@cassian-geodata.fr</p>
+                    <p>
+                        <a class="social-link" href="https://www.linkedin.com/in/malek-belkhir" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 0H5C2.239 0 0 2.239 0 5v14c0 2.761 2.239 5 5 5h14c2.761 0 5-2.239 5-5V5c0-2.761-2.239-5-5-5zM7.119 20.452H3.558V9.031h3.561v11.421zM5.338 7.52c-1.139 0-2.062-.923-2.062-2.061 0-1.138.923-2.062 2.062-2.062 1.138 0 2.061.924 2.061 2.062 0 1.138-.923 2.061-2.061 2.061zM20.452 20.452h-3.56v-5.561c0-1.327-.027-3.035-1.849-3.035-1.85 0-2.133 1.445-2.133 2.94v5.656H9.351V9.031h3.418v1.561h.048c.476-.9 1.638-1.849 3.37-1.849 3.603 0 4.266 2.371 4.266 5.455v6.254z"/></svg>
+                            LinkedIn
+                        </a>
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Cassian GEODATA SYSTEM. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

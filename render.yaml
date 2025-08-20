@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: cassian-geodata
+    env: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+
